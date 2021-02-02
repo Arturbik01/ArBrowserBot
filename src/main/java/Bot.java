@@ -1,40 +1,45 @@
-import commands.Book;
-import commands.Help;
+import config.LoadConfig;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import states.MainState;
+import states.StatesMap;
+import states.start.Start;
+
+import java.io.IOException;
 
 public class Bot extends TelegramLongPollingBot {
-    private static Runnable commandRunner;
-    private static Thread commandThread;
+    private LoadConfig loadConfig;
+    private static StatesMap map = StatesMap.getInstance();
+    {
+        try {
+            loadConfig = new LoadConfig("src/main/resources/config.properties");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public void onUpdateReceived(Update update) {
-        System.out.println(update.getMessage().getText());
-        if (update.getMessage() == null || update.getMessage().getText().isEmpty()) throw new NullPointerException();
-        if (update.getMessage().getText().startsWith("/")){
-            String command = update.getMessage().getText();
-            switch (command){
-                case "/book":
-                    commandRunner = new Book(update);
-                    commandThread = new Thread(commandRunner);
-                    commandThread.start();
-                    break;
-                default:
-                    commandRunner = new Help();
-
-            }
+        Message inputMessage = update.getMessage();
+        if (inputMessage.getText().equalsIgnoreCase("/start")){
+            map.put(inputMessage.getChatId(), MainState.START);
+            new Start(inputMessage.getChatId());
         }
+
+
+
     }
 
 
 
     @Override
     public String getBotUsername() {
-        return "ArBrowserBot";
+       return loadConfig.getBotName("telegram.name");
     }
 
     @Override
     public String getBotToken() {
-        return "";
+        return loadConfig.getToken("telegram.token");
     }
 }
