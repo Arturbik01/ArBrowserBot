@@ -1,45 +1,42 @@
+import commands.Start;
 import config.LoadConfig;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import states.MainState;
 import states.StatesMap;
-import states.start.Start;
-
-import java.io.IOException;
 
 public class Bot extends TelegramLongPollingBot {
-    private LoadConfig loadConfig;
+    private LoadConfig loadConfig = new LoadConfig();
     private static StatesMap map = StatesMap.getInstance();
-    {
-        try {
-            loadConfig = new LoadConfig("src/main/resources/config.properties");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    private DelegateCommands commands = new DelegateCommands();
 
+    {
+        commands.setCommand("start");
+        commands.setCommand("book");
+    }
     @Override
     public void onUpdateReceived(Update update) {
         Message inputMessage = update.getMessage();
-        if (inputMessage.getText().equalsIgnoreCase("/start")){
-            map.put(inputMessage.getChatId(), MainState.START);
-            new Start(inputMessage.getChatId());
+
+        long chatId = inputMessage.getChatId();
+        if (inputMessage.getText().startsWith("/")){
+            switch (inputMessage.getText()) {
+                case "/start" -> commands.start(chatId);
+                case "/book" -> commands.book();
+            }
         }
-
-
-
     }
 
 
 
     @Override
     public String getBotUsername() {
-       return loadConfig.getBotName("telegram.name");
+       return loadConfig.getName();
     }
 
     @Override
     public String getBotToken() {
-        return loadConfig.getToken("telegram.token");
+        return loadConfig.getToken();
     }
 }
